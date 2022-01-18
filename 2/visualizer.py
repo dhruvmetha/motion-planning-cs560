@@ -136,7 +136,9 @@ def visualize_tree(tree, robot, obstacles, start, goal, old_obstacles=None, show
         
     if show:
         
+        # plt.savefig('2_rrt.png', format='png')
         plt.show()
+
 
 def visualize_configuration(robot, obstacles, start, goal):
     new_obstacles = make_configuration_space(robot, obstacles)
