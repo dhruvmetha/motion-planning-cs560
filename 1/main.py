@@ -1,5 +1,3 @@
-from numpy.core.numeric import ones
-from numpy.lib.arraypad import pad
 from file_parse import *
 from rrt import get_bounds, make_configuration_space, rrt
 from tree import *
@@ -23,8 +21,10 @@ def main():
     # visualize_configuration(robot, obstacles, start, goal)
     # visualize_problem(robot, obstacles, start, goal)
     
-    visualize_rrt(robot, obstacles, start, goal, 100)
-    visualize_rrt_star(robot, obstacles, start, goal, 400)
+    animate_rrt(robot, obstacles, start, goal, 500)
+    # visualize_rrt(robot, obstacles, start, goal, 100)
+    # visualize_rrt_star(robot, obstacles, start, goal, 400)
+    animate_rrt_star(robot, obstacles, start, goal, 400)
 
 
     # new_obstacles = make_configuration_space([[0., 0.], [0.2, 0.2], [.4, 0.]], [[[4.0, 4.0], [4.0, 6.0], [6.0, 6.0], [6.0, 4.0]]])

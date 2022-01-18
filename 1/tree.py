@@ -20,6 +20,9 @@ class Tree:
         self.goal = Node(goal, None)
         self.robot = robot
         self.obstacles = obstacles
+        self.animation = []
+        self.timestep = 1
+        
 
     def get_cost(self, point):
         return self.cost_tree_nodes[tuple(point)]
@@ -31,12 +34,18 @@ class Tree:
             parent_node.children.append(point2)
             self.tree_nodes[point2] = new_node
             self.cost_tree_nodes[point2] = self.cost_tree_nodes[point1] + euclidean(*point1, *point2)
+            self.animation.append((self.timestep, True, point1, point2))
+            self.timestep += 1
         else:
             new_node = self.tree_nodes[point2]
+            self.animation.append((self.timestep, False, new_node.parent.point, point2))
+            self.timestep += 1
             new_node.parent.children.remove(point2)
             new_node.parent = parent_node
             parent_node.children.append(point2)
             self.cost_tree_nodes[point2] = self.cost_tree_nodes[point1] + euclidean(*point1, *point2)
+            self.animation.append((self.timestep, True, point1, point2))
+            self.timestep += 1
 
     def exists(self, point):
         if point in self.tree_nodes.keys():

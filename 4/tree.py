@@ -46,6 +46,8 @@ class Tree:
         self.goal = Node(goal, None)
         self.robot = robot
         self.obstacles = obstacles
+        self.animation = []
+        self.timestamp = 0
 
     def get_cost(self, point):
         return self.cost_tree_nodes[tuple(point)]
@@ -69,6 +71,7 @@ class Tree:
                 self.controls[point1] = control
             if duration is not None:
                 self.durations[point1] = duration
+            self.animation.append((self.timestamp, True, point1, point2))
                 
         else:
             new_node = self.tree_nodes[point2]

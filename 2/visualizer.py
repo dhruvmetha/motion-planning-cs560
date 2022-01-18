@@ -1,6 +1,7 @@
 from matplotlib import pyplot as plt, colors, patches
+from matplotlib.path import Path
+import matplotlib.animation as animation
 import numpy as np
-from numpy.core.numeric import zeros_like
 
 from rrt import make_configuration_space, rrt, rrt_star
 
@@ -153,3 +154,75 @@ def visualize_rrt_star(robot, obstacles, start, goal , iter_n):
     visualize_path(robot, new_obstacles, path, obstacles, tree)
     
 
+
+def visualize_animations(robot, obstacles, start, goal, path, old_obstacles, tree, interval=50):
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+    
+    # fig = plt.figure()
+    # ax = fig.gca()
+    polygons = []
+
+    rob = np.array(robot)
+
+    if start:
+        rob_start = rob + np.array(start)
+        poly = patches.Polygon(rob_start, True, facecolor='r')
+        ax.add_patch(poly)
+    
+    if goal:
+        rob_goal = rob + np.array(goal)
+        poly = patches.Polygon(rob_goal, True, facecolor='g')
+        ax.add_patch(poly)
+
+    for obs in obstacles:
+        ob = np.array(obs)
+        poly = patches.Polygon(ob, True, facecolor='pink', zorder=0, edgecolor='g')
+        ax.add_patch(poly)
+
+    if old_obstacles:
+        for obs in old_obstacles:
+            ob = np.array(obs)
+            poly = patches.Polygon(ob, True, facecolor='slategrey', zorder=1)
+            ax.add_patch(poly)
+
+    
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 10)
+
+    patches_stored = {}
+    switch = []
+
+    def animate_tree(frame):
+        print(frame)
+        t = frame[0]
+        if (type(t)==int) and (t == -1):
+            switch.append(-1)
+            return
+        
+        if len(switch) == 0:
+            _, wire, point1, point2 = frame
+            if wire:
+                verts = [point1, point1, point2]
+                codes = [Path.MOVETO, Path.LINETO, Path.LINETO]
+                path = Path(verts, codes)
+                patch = patches.PathPatch(path, edgecolor='black', facecolor='none', lw=1, zorder=10)
+                ax.add_patch(patch)
+                patches_stored[(point1, point2)] = patch
+            
+            else:
+                patch = patches_stored[(point1, point2)]
+                patch.remove()
+        else:
+            point1, point2 = list(frame[0]), list(frame[1])
+            print(frame)
+            verts = [point1, point1, point2]
+            codes = [Path.MOVETO, Path.LINETO, Path.LINETO]
+            path = Path(verts, codes)
+            patch = patches.PathPatch(path, edgecolor='r', facecolor='none', lw=1.3, zorder=11)
+            ax.add_patch(patch)
+
+    new_path = zip(path[:-1], path[1:])
+
+    ani_tree = animation.FuncAnimation(fig, animate_tree, frames=[*tree.animation, (-1, 0, 0, 0), *new_path], interval=interval, repeat=False)
+
+    plt.show()

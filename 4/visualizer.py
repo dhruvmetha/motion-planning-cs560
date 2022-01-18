@@ -1,13 +1,18 @@
 from matplotlib import pyplot as plt, colors, patches
+from matplotlib.path import Path
+import matplotlib.animation as animation
 import numpy as np
 from numpy.core.numeric import zeros_like
 
 # from rrt import make_configuration_space, rrt, rrt_star
+FFwriter = animation.FFMpegWriter
 
-def visualize_problem(robot, obstacles, start, goal, old_obstacles = None, show=True):
+def visualize_problem(robot, obstacles, start, goal, old_obstacles = None, show=True, fig=None, ax=None):
 
-    fig = plt.figure()
-    ax = fig.gca()
+    if fig is None:
+        fig = plt.figure()
+        ax = fig.gca()
+
     polygons = []
 
     # rob = np.array(robot.transform())
@@ -52,7 +57,7 @@ def visualize_problem(robot, obstacles, start, goal, old_obstacles = None, show=
         
         plt.show()
 
-def visualize_points(points, robot, obstacles, start, goal, old_obstacles=None, show=True, free=True):
+def visualize_points(points, robot, obstacles, start, goal, old_obstacles=None, show=True, free=True, fig=None, ax=None):
     if type(points) == dict:
         points_arr = np.array(points['free'])
         points_collide_arr = np.array(points['collide'])
@@ -60,7 +65,7 @@ def visualize_points(points, robot, obstacles, start, goal, old_obstacles=None, 
         points_arr = points
         points_collide_arr = []
 
-    visualize_problem(robot, obstacles, start, goal, old_obstacles, show=False)
+    visualize_problem(robot, obstacles, start, goal, old_obstacles, show=False, fig=fig, ax=ax)
     if len(points_arr) > 0:
         plt.scatter(points_arr[:, 0], points_arr[:, 1], color='black', zorder=2)
     if len(points_collide_arr) > 0:
@@ -79,11 +84,11 @@ def visualize_points(points, robot, obstacles, start, goal, old_obstacles=None, 
         
         plt.show()
 
-def visualize_path(robot, obstacles, path, old_obstacles=None, tree=None, show=True):
+def visualize_path(robot, obstacles, path, old_obstacles=None, tree=None, show=True, fig=None, ax=None):
     if tree:
-        visualize_tree(tree, robot, obstacles, path[0], path[-1], old_obstacles, show=False)
+        visualize_tree(tree, robot, obstacles, path[0], path[-1], old_obstacles, show=False, fig=fig, ax=ax)
     else:
-        visualize_points(np.array(path), robot, obstacles, path[0], path[-1], old_obstacles, show=False)
+        visualize_points(np.array(path), robot, obstacles, path[0], path[-1], old_obstacles, show=False, fig=fig, ax=ax)
 
     for i in range(len(path) - 1):
         if path[i] is not None and path[i+1] is not None:
@@ -106,8 +111,8 @@ def visualize_path(robot, obstacles, path, old_obstacles=None, tree=None, show=T
         
         plt.show()
 
-def visualize_tree(tree, robot, obstacles, start, goal, old_obstacles=None, show=True):
-    visualize_problem(robot, obstacles, start, goal, old_obstacles, show=False)
+def visualize_tree(tree, robot, obstacles, start, goal, old_obstacles=None, show=True, fig=None, ax=None):
+    visualize_problem(robot, obstacles, start, goal, old_obstacles, show=False, fig=fig, ax=ax)
     points = np.array(list(tree.tree_nodes.keys()))
     if len(points) > 0:
         plt.scatter(points[:, 0], points[:, 1], color='black', zorder=1)
@@ -143,7 +148,6 @@ def visualize_tree(tree, robot, obstacles, start, goal, old_obstacles=None, show
 #     # tree, path = rrt(robot, new_obstacles, start, goal, 500, return_tree=True)
 
 # def visualize_rrt(robot, obstacles, start, goal, iter_n):
-#     new_obstacles = make_configuration_space(robot, obstacles)
 #     tree, path = rrt(robot, new_obstacles, start, goal, iter_n, return_tree=True)
 #     visualize_path(robot, new_obstacles, path, obstacles, tree)
 
@@ -151,5 +155,55 @@ def visualize_tree(tree, robot, obstacles, start, goal, old_obstacles=None, show
 #     new_obstacles = make_configuration_space(robot, obstacles)
 #     tree, path = rrt_star(robot, new_obstacles, start, goal, iter_n, return_tree=True)
 #     visualize_path(robot, new_obstacles, path, obstacles, tree)
+
+
+def visualize_animations(robot, obstacles, start, goal, path, tree, interval=10):
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+    
+    visualize_problem(robot, obstacles, start, goal, show=False, fig=fig, ax=ax)
+    # visualize_tree(tree, robot, obstacles, start, goal, None, show=False, fig=fig, ax=ax)
+
+    patches_stored = {}
+    last_patch = []
+
+    def animate_tree(frame1):
+        # print(frame1)
+        make, frame = frame1
+        if make == 0:
+            _, wire, point1, point2 = frame
+            if wire:
+                verts = [list(point1[:2]), list(point1[:2]), list(point2[:2])]
+                codes = [Path.MOVETO, Path.LINETO, Path.LINETO]
+                path = Path(verts, codes)
+                patch = patches.PathPatch(path, edgecolor='black', facecolor='none', lw=1, zorder=10)
+                ax.add_patch(patch)
+                patches_stored[(point1, point2)] = patch
+            
+            else:
+                patch = patches_stored[(point1, point2)]
+                patch.remove()
+
+        if make == 1:
+            if len(last_patch) != 0:
+                last_patch[0].remove()
+                last_patch.clear()
+
+            x1, y1, a1 = frame
+
+            robot.set_pose((x1, y1, a1))
+            rob_start = np.array(robot.transform())
+            
+            ob = np.array(rob_start)
+            poly = patches.Polygon(ob, True, facecolor='blue', zorder=10, alpha=0.7)
+            ax.add_patch(poly)
+            last_patch.append(poly)
+
+    tree_anim = [(0, an) for an in tree.animation]
+    path_anim = [(1, an) for an in path]
+
+    ani_tree = animation.FuncAnimation(fig, animate_tree, frames=[*tree_anim, *path_anim] , interval=interval, repeat=False)
+
+    # plt.show()
+    ani_tree.save('4_rrt.mp4', writer = FFwriter(30))
     
 

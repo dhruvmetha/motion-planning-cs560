@@ -1,5 +1,4 @@
-from numpy.core.numeric import ones
-from numpy.lib.arraypad import pad
+
 from file_parse import *
 from rrt import get_bounds, make_configuration_space, rrt
 from tree import *
@@ -53,8 +52,11 @@ def main():
     # tree, path = rrt_star(robot, obstacles, start, goal, 500, return_tree=True)
     # visualize_path(robot, obstacles, path, tree=tree)
     
-    tree, path = rrt(robot, obstacles, start, goal, 5000, return_tree=True)
-    visualize_path(robot, obstacles, path, tree=tree)
+    tree, path = rrt(robot, obstacles, start, goal, 10000, return_tree=True)
+    # visualize_path(robot, obstacles, path, tree=tree)
+    visualize_animations(robot, obstacles, start, goal,path, tree)
+
+    # anima
 
     # visualize_configuration(robot, obstacles, start, goal)
     # visualize_problem(robot, obstacles, start, goal)
